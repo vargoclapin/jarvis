@@ -7,6 +7,15 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 
+
+import cv2
+import os
+import urllib.request
+import mediapipe as mp
+from mediapipe.tasks import python
+from mediapipe.tasks.python import vision
+
+
 WIDTH, HEIGHT = 1000, 700
 FPS = 60
 FOV = 500
@@ -374,3 +383,92 @@ def generer_depuis_mon_bureau(chemin_dossier, centre, rayon, profondeur_max=2, p
             print(f"[Erreur sur un sous-dossier ignoré] {chemin_dossier} -> {e}")
             
         return Bureau3D([])
+
+def norme(a,b):
+    return ((a.x-b.x)**2+(a.y-b.y)**2)**0.5 
+
+def calcul_barycentre(landmarks):
+    centre=[0,0]
+    n=len(landmarks)
+    for p in landmarks:
+        centre[0]+=p.x/n
+        centre[1]+=p.y/n
+    return centre
+    
+
+
+def doigt_est_plie(tip, pip, wrist):
+    
+    dist_tip_poignet = norme(tip, wrist)
+    dist_pip_poignet = norme(pip, wrist)
+    
+    
+    return dist_tip_poignet < dist_pip_poignet
+
+def est_poing_ferme(landmarks):
+    poignet = landmarks[0]
+    
+    # On vérifie les 4 doigts principaux (on exclut souvent le pouce 
+    # car sa mécanique de pliure est différente)
+    index_plie = doigt_est_plie(landmarks[8], landmarks[6], poignet)
+    majeur_plie = doigt_est_plie(landmarks[12], landmarks[10], poignet)
+    annulaire_plie = doigt_est_plie(landmarks[16], landmarks[14], poignet)
+    auriculaire_plie = doigt_est_plie(landmarks[20], landmarks[18], poignet)
+    
+    # Si les 4 doigts sont pliés vers le poignet, c'est un poing !
+    if index_plie and majeur_plie and annulaire_plie and auriculaire_plie:
+        return True
+    return False
+
+def est_corne(landmarks):
+    poignet = landmarks[0]
+    
+    index_plie = doigt_est_plie(landmarks[8], landmarks[6], poignet)
+    majeur_plie = doigt_est_plie(landmarks[12], landmarks[10], poignet)
+    annulaire_plie = doigt_est_plie(landmarks[16], landmarks[14], poignet)
+    auriculaire_plie = doigt_est_plie(landmarks[20], landmarks[18], poignet)
+    if not index_plie and majeur_plie and annulaire_plie and not auriculaire_plie:
+        return True
+    else : 
+        return False
+    
+def deep_three(landmarks):
+    poignet = landmarks[0]
+
+    majeur_plie = doigt_est_plie(landmarks[12], landmarks[10], poignet)
+    annulaire_plie = doigt_est_plie(landmarks[16], landmarks[14], poignet)
+    auriculaire_plie = doigt_est_plie(landmarks[20], landmarks[18], poignet)
+
+    d= norme(landmarks[4],landmarks[8])<0.1
+    if d and not majeur_plie and not annulaire_plie and not auriculaire_plie:
+        return True
+    return False
+
+
+def zoom(landmarks):
+    aire = norme(landmarks[17],landmarks[5])*norme(landmarks[5],landmarks[0])
+    min = 0.006
+    max = 0.09
+    inf = 0.009
+    sup =0.02
+    if inf<=aire <=sup :
+        vitesse = 0
+    elif sup<aire<=max:
+        vitesse = 7/(max-sup)*(aire-sup)+1
+    elif max<aire:
+        vitesse = 8
+    elif aire<min:
+        vitesse=-8
+    else :
+        vitesse = 7/(inf-min)*(aire-min)-8
+    return vitesse
+
+def tourni(landmarks): #ici on renvoie la vitesse angualaire de la caméra en fonction de la position de la main (on a une vitesse pour x et y)
+    centre = calcul_barycentre(landmarks)
+    en_y = 0.06*round(centre[0]*50)/50 -0.03
+    en_x = 0.06*round(centre[1]*50)/50 -0.03
+    return (round(en_y,3),round(en_x,3))
+
+
+
+
