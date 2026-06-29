@@ -449,7 +449,7 @@ def zoom(landmarks):
     aire = norme(landmarks[17],landmarks[5])*norme(landmarks[5],landmarks[0])
     min = 0.006
     max = 0.09
-    inf = 0.009
+    inf = 0.01
     sup =0.02
     if inf<=aire <=sup :
         vitesse = 0
@@ -464,9 +464,10 @@ def zoom(landmarks):
     return vitesse
 
 def tourni(landmarks): #ici on renvoie la vitesse angualaire de la caméra en fonction de la position de la main (on a une vitesse pour x et y)
-    centre = calcul_barycentre(landmarks)
-    en_y = 0.06*round(centre[0]*50)/50 -0.03
-    en_x = 0.06*round(centre[1]*50)/50 -0.03
+    paume = [landmarks[2],landmarks[5],landmarks[9],landmarks[13],landmarks[17]]
+    centre = calcul_barycentre(paume)
+    en_y = 0.08*round(centre[0]*70)/70 -0.04
+    en_x = 0.08*round(centre[1]*70)/70 -0.04
     return (-round(en_y,3),round(en_x,3))
 
 def est_chill(landmarks):
