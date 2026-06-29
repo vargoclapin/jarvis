@@ -467,8 +467,19 @@ def tourni(landmarks): #ici on renvoie la vitesse angualaire de la caméra en fo
     centre = calcul_barycentre(landmarks)
     en_y = 0.06*round(centre[0]*50)/50 -0.03
     en_x = 0.06*round(centre[1]*50)/50 -0.03
-    return (round(en_y,3),round(en_x,3))
+    return (-round(en_y,3),round(en_x,3))
 
+def est_chill(landmarks):
+    poignet = landmarks[0]
+
+    majeur_plie = doigt_est_plie(landmarks[12], landmarks[10], poignet)
+    annulaire_plie = doigt_est_plie(landmarks[16], landmarks[14], poignet)
+    auriculaire_plie = doigt_est_plie(landmarks[20], landmarks[18], poignet)
+    index_plie = doigt_est_plie(landmarks[8], landmarks[6], poignet)
+    if not index_plie and not majeur_plie and annulaire_plie and auriculaire_plie:
+        return True
+    else : 
+        return False
 
 
 
